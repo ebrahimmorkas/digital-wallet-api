@@ -1,0 +1,39 @@
+name: digital-wallet
+
+services:
+  postgres:
+    image: postgres:16-alpine
+    environment:
+      POSTGRES_DB: wallet_db
+      POSTGRES_USER: postgres
+      POSTGRES_PASSWORD: postgres
+    ports:
+      - "5432:5432"
+    volumes:
+      - postgres-data:/var/lib/postgresql/data
+    healthcheck:
+      test: ["CMD-SHELL", "pg_isready -U postgres -d wallet_db"]
+      interval: 5s
+      timeout: 5s
+      retries: 10
+
+  api:
+    build: .
+    image: digital-wallet-api
+    ports:
+      - "8080:8080"
+    mem_limit: 768m
+    environment:
+      DB_URL: jdbc:postgresql://postgres:5432/wallet_db
+      DB_USERNAME: postgres
+      DB_PASSWORD: postgres
+      # Demo values only. Generate a real key with: openssl rand -base64 32
+      JWT_SECRET: ${JWT_SECRET:-ZGV2LW9ubHktc2VjcmV0LWNoYW5nZS1tZS1pbi1wcm9kdWN0aW9uLTEyMzQ1Njc4OTA=}
+      APP_ADMIN_EMAIL: admin@wallet.local
+      APP_ADMIN_PASSWORD: ${ADMIN_PASSWORD:-Admin12345}
+    depends_on:
+      postgres:
+        condition: service_healthy
+
+volumes:
+  postgres-data:
