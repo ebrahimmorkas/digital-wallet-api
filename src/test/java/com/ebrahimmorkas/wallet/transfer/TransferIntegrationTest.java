@@ -7,6 +7,8 @@ import org.junit.jupiter.api.Test;
 import org.springframework.http.MediaType;
 import org.springframework.test.web.servlet.ResultActions;
 
+import java.util.UUID;
+
 import static org.springframework.test.web.servlet.request.MockMvcRequestBuilders.get;
 import static org.springframework.test.web.servlet.request.MockMvcRequestBuilders.post;
 import static org.springframework.test.web.servlet.result.MockMvcResultMatchers.jsonPath;
@@ -74,6 +76,7 @@ class TransferIntegrationTest extends IntegrationTest {
 
     private ResultActions transfer(String token, String from, String to, String amount) throws Exception {
         return mockMvc.perform(post("/api/transfers").header("Authorization", token)
+                .header("Idempotency-Key", UUID.randomUUID().toString())
                 .contentType(MediaType.APPLICATION_JSON)
                 .content("""
                         {"sourceWalletId": "%s", "destinationWalletId": "%s", "amount": %s}

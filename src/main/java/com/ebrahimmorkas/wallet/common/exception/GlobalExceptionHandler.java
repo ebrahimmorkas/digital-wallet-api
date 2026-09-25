@@ -1,19 +1,28 @@
 package com.ebrahimmorkas.wallet.common.exception;
 
+import org.springframework.http.HttpHeaders;
 import org.springframework.http.HttpStatus;
+import org.springframework.http.HttpStatusCode;
 import org.springframework.http.ProblemDetail;
+import org.springframework.http.ResponseEntity;
 import org.springframework.security.authentication.BadCredentialsException;
 import org.springframework.validation.FieldError;
 import org.springframework.web.bind.MethodArgumentNotValidException;
 import org.springframework.web.bind.annotation.ExceptionHandler;
 import org.springframework.web.bind.annotation.RestControllerAdvice;
+import org.springframework.web.context.request.WebRequest;
+import org.springframework.web.servlet.mvc.method.annotation.ResponseEntityExceptionHandler;
 
 import java.util.Map;
 import java.util.stream.Collectors;
 
-/** Maps exceptions to RFC 9457 problem details so every error has the same shape. */
+/**
+ * Maps exceptions to RFC 9457 problem details so every error has the same shape. Extending
+ * {@link ResponseEntityExceptionHandler} also covers Spring MVC's own errors (missing headers,
+ * malformed JSON, unsupported methods, ...).
+ */
 @RestControllerAdvice
-public class GlobalExceptionHandler {
+public class GlobalExceptionHandler extends ResponseEntityExceptionHandler {
 
     @ExceptionHandler(NotFoundException.class)
     ProblemDetail handleNotFound(NotFoundException ex) {
@@ -37,13 +46,15 @@ public class GlobalExceptionHandler {
         return problem(HttpStatus.UNAUTHORIZED, "Authentication failed", ex.getMessage());
     }
 
-    @ExceptionHandler(MethodArgumentNotValidException.class)
-    ProblemDetail handleValidation(MethodArgumentNotValidException ex) {
+    @Override
+    protected ResponseEntity<Object> handleMethodArgumentNotValid(MethodArgumentNotValidException ex,
+                                                                  HttpHeaders headers, HttpStatusCode status,
+                                                                  WebRequest request) {
         ProblemDetail problem = problem(HttpStatus.BAD_REQUEST, "Validation failed", "Request body is invalid");
         Map<String, String> errors = ex.getBindingResult().getFieldErrors().stream()
                 .collect(Collectors.toMap(FieldError::getField, e -> String.valueOf(e.getDefaultMessage()), (a, b) -> a));
         problem.setProperty("errors", errors);
-        return problem;
+        return ResponseEntity.badRequest().body(problem);
     }
 
     static ProblemDetail problem(HttpStatus status, String title, String detail) {
