@@ -18,12 +18,16 @@ import static org.springframework.test.web.servlet.result.MockMvcResultMatchers.
  * Base class for full-stack tests: real PostgreSQL (Testcontainers), real security filter chain.
  * All subclasses share one application context and therefore one database container.
  */
-@SpringBootTest
+@SpringBootTest(properties = {
+        "app.admin.email=" + IntegrationTest.ADMIN_EMAIL,
+        "app.admin.password=" + IntegrationTest.PASSWORD
+})
 @AutoConfigureMockMvc
 @Import(TestcontainersConfiguration.class)
 public abstract class IntegrationTest {
 
     protected static final String PASSWORD = "Secret123";
+    protected static final String ADMIN_EMAIL = "admin@example.com";
 
     @Autowired
     protected MockMvc mockMvc;
