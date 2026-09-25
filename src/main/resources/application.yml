@@ -20,6 +20,9 @@ app:
       secret: ${JWT_SECRET:ZGV2LW9ubHktc2VjcmV0LWNoYW5nZS1tZS1pbi1wcm9kdWN0aW9uLTEyMzQ1Njc4OTA=}
       issuer: digital-wallet-api
       expiration: ${JWT_EXPIRATION:1h}
+  idempotency:
+    retention: 24h
+    cleanup-cron: "0 0 * * * *"
 
 management:
   endpoints:

@@ -8,6 +8,7 @@ import org.springframework.jdbc.core.JdbcTemplate;
 
 import java.math.BigDecimal;
 import java.util.List;
+import java.util.UUID;
 
 import static org.assertj.core.api.Assertions.assertThat;
 import static org.springframework.test.web.servlet.request.MockMvcRequestBuilders.get;
@@ -26,6 +27,7 @@ class FundingIntegrationTest extends IntegrationTest {
         String walletId = openWallet(token, "USD");
 
         mockMvc.perform(post("/api/wallets/{id}/deposits", walletId).header("Authorization", token)
+                        .header("Idempotency-Key", UUID.randomUUID().toString())
                         .contentType(MediaType.APPLICATION_JSON)
                         .content("{\"amount\": 150.00, \"description\": \"Card top-up\"}"))
                 .andExpect(status().isCreated())
@@ -33,6 +35,7 @@ class FundingIntegrationTest extends IntegrationTest {
                 .andExpect(jsonPath("$.destinationWalletId").value(walletId));
 
         mockMvc.perform(post("/api/wallets/{id}/withdrawals", walletId).header("Authorization", token)
+                        .header("Idempotency-Key", UUID.randomUUID().toString())
                         .contentType(MediaType.APPLICATION_JSON)
                         .content("{\"amount\": 40.25}"))
                 .andExpect(status().isCreated())
@@ -52,6 +55,7 @@ class FundingIntegrationTest extends IntegrationTest {
         String walletId = openWallet(token, "EUR");
 
         mockMvc.perform(post("/api/wallets/{id}/withdrawals", walletId).header("Authorization", token)
+                        .header("Idempotency-Key", UUID.randomUUID().toString())
                         .contentType(MediaType.APPLICATION_JSON)
                         .content("{\"amount\": 1.00}"))
                 .andExpect(status().isUnprocessableEntity())
@@ -63,6 +67,7 @@ class FundingIntegrationTest extends IntegrationTest {
         String walletId = openWallet(newUserToken(), "USD");
 
         mockMvc.perform(post("/api/wallets/{id}/deposits", walletId).header("Authorization", newUserToken())
+                        .header("Idempotency-Key", UUID.randomUUID().toString())
                         .contentType(MediaType.APPLICATION_JSON)
                         .content("{\"amount\": 10.00}"))
                 .andExpect(status().isNotFound());
@@ -75,6 +80,7 @@ class FundingIntegrationTest extends IntegrationTest {
 
         for (String amount : List.of("0", "-5", "10.001")) {
             mockMvc.perform(post("/api/wallets/{id}/deposits", walletId).header("Authorization", token)
+                        .header("Idempotency-Key", UUID.randomUUID().toString())
                             .contentType(MediaType.APPLICATION_JSON)
                             .content("{\"amount\": %s}".formatted(amount)))
                     .andExpect(status().isBadRequest());
@@ -86,6 +92,7 @@ class FundingIntegrationTest extends IntegrationTest {
         String token = newUserToken();
         String walletId = openWallet(token, "GBP");
         mockMvc.perform(post("/api/wallets/{id}/deposits", walletId).header("Authorization", token)
+                        .header("Idempotency-Key", UUID.randomUUID().toString())
                 .contentType(MediaType.APPLICATION_JSON).content("{\"amount\": 75.00}"));
 
         List<BigDecimal> imbalances = jdbcTemplate.queryForList("""

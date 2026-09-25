@@ -14,4 +14,10 @@ public record TransferRequest(
         @NotNull UUID destinationWalletId,
         @NotNull @DecimalMin("0.01") @DecimalMax("1000000.00") @Digits(integer = 15, fraction = 2) BigDecimal amount,
         @Size(max = 255) String description) {
+
+    /** Canonical form used to detect an idempotency key being reused for a different request. */
+    public String fingerprint() {
+        return String.join("|", "TRANSFER", sourceWalletId.toString(), destinationWalletId.toString(),
+                amount.setScale(2).toPlainString(), String.valueOf(description));
+    }
 }
